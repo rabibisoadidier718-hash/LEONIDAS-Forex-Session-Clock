@@ -3,108 +3,154 @@ package com.leonidas.forexsession
 
 import android.app.Activity
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
+import android.graphics.Color
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Button
+import android.widget.ScrollView
+import android.widget.Toast
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
 class MainActivity : Activity() {
 
-    private lateinit var clock: TextView
-    private lateinit var sessions: TextView
-    private lateinit var status: TextView
-
-    private val handler = Handler(Looper.getMainLooper())
+    private val gold = Color.rgb(255, 193, 7)
+    private val dark = Color.rgb(16, 24, 32)
     private val zone = TimeZone.getTimeZone("Indian/Antananarivo")
-
-    private val updateClock = object : Runnable {
-        override fun run() {
-            val format = SimpleDateFormat("HH:mm:ss", Locale.FRANCE)
-            format.timeZone = zone
-
-            clock.text = "MADAGASCAR\n${format.format(Date())}"
-
-            val calendar = Calendar.getInstance(zone)
-            val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-            sessions.text = getSession(hour)
-            status.text = "Fuseau horaire : GMT+3\nApplication 100% hors ligne"
-
-            handler.postDelayed(this, 1000)
-        }
-    }
+    private lateinit var clock: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val layout = LinearLayout(this).apply {
+        val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(30, 40, 30, 40)
-            setBackgroundColor(0xFF101820.toInt())
+            setBackgroundColor(dark)
+            setPadding(24, 30, 24, 30)
+        }
+
+        val scroll = ScrollView(this)
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
         }
 
         val title = TextView(this).apply {
-            text = "LEONIDAS"
+            text = "⚔ LEONIDAS"
             textSize = 34f
-            setTextColor(0xFFFFC107.toInt())
+            setTextColor(gold)
             gravity = Gravity.CENTER
         }
 
         val subtitle = TextView(this).apply {
-            text = "FOREX SESSION CLOCK"
-            textSize = 16f
-            setTextColor(0xFFFFFFFF.toInt())
+            text = "SPARTAN GOLD"
+            textSize = 19f
+            setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
         }
 
         clock = TextView(this).apply {
-            textSize = 30f
-            setTextColor(0xFFFFFFFF.toInt())
+            textSize = 25f
+            setTextColor(gold)
             gravity = Gravity.CENTER
-            setPadding(0, 40, 0, 40)
+            setPadding(0, 25, 0, 10)
         }
 
-        sessions = TextView(this).apply {
-            textSize = 22f
-            setTextColor(0xFF00E676.toInt())
-            gravity = Gravity.CENTER
-            setPadding(0, 20, 0, 20)
-        }
-
-        status = TextView(this).apply {
-            textSize = 14f
-            setTextColor(0xFFB0BEC5.toInt())
+        val location = TextView(this).apply {
+            text = "MADAGASCAR • GMT+3"
+            textSize = 13f
+            setTextColor(Color.LTGRAY)
             gravity = Gravity.CENTER
         }
 
-        layout.addView(title)
-        layout.addView(subtitle)
-        layout.addView(clock)
-        layout.addView(sessions)
-        layout.addView(status)
+        content.addView(title)
+        content.addView(subtitle)
+        content.addView(clock)
+        content.addView(location)
 
-        setContentView(layout)
-        handler.post(updateClock)
+        addSection(content, "CENTRE DE TRADING")
+
+        val modules = listOf(
+            "HORLOGE & SESSIONS FOREX",
+            "ALARMES DES SESSIONS",
+            "CALCULATEUR DE LOTS",
+            "CALENDRIER ECONOMIQUE",
+            "GESTION DU RISQUE",
+            "JOURNAL DE TRADING PRO",
+            "STATISTIQUES & PSYCHOLOGIE",
+            "OBJECTIF CAPITAL : 1 000 000 $"
+        )
+
+        modules.forEachIndexed { index, name ->
+            val button = Button(this).apply {
+                text = name
+                textSize = 14f
+                setTextColor(gold)
+                setBackgroundColor(Color.rgb(35, 43, 52))
+                isAllCaps = false
+
+                setOnClickListener {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "$name : module en construction",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                65
+            )
+            params.setMargins(0, 7, 0, 7)
+            content.addView(button, params)
+        }
+
+        addSection(content, "LE CODE DU SPARTAN")
+
+        val footer = TextView(this).apply {
+            text = "DISCIPLINE • PATIENCE • PRECISION\nAPPLICATION HORS LIGNE"
+            textSize = 13f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+            setPadding(0, 25, 0, 20)
+        }
+
+        content.addView(footer)
+        scroll.addView(content)
+        root.addView(scroll)
+        setContentView(root)
+
+        updateClock()
     }
 
-    private fun getSession(hour: Int): String {
-        return when (hour) {
-            in 0..6 -> "SESSION : TOKYO"
-            in 7..11 -> "SESSION : LONDRES"
-            in 12..16 -> "SESSION : NEW YORK"
-            else -> "SESSION : SYDNEY"
+    private fun addSection(
+        layout: LinearLayout,
+        name: String
+    ) {
+        val section = TextView(this).apply {
+            text = name
+            textSize = 16f
+            setTextColor(gold)
+            gravity = Gravity.CENTER
+            setPadding(0, 30, 0, 15)
         }
+        layout.addView(section)
     }
 
-    override fun onDestroy() {
-        handler.removeCallbacks(updateClock)
-        super.onDestroy()
+    private fun updateClock() {
+        val format = SimpleDateFormat(
+            "HH:mm:ss",
+            Locale.FRANCE
+        )
+        format.timeZone = zone
+
+        clock.text = format.format(Date())
+
+        clock.postDelayed({
+            updateClock()
+        }, 1000)
     }
 }
