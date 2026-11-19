@@ -196,7 +196,6 @@ class MainActivity : Activity() {
     grossLoss > 0 -> grossProfit / grossLoss
     grossProfit > 0 -> -1.0
     else -> 0.0
-})
         })
         result.put("drawdown", maxDrawdown)
         result.put("mae", if (maeCount > 0) maeTotal / maeCount else 0.0)
