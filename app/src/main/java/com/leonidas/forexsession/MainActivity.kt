@@ -193,9 +193,10 @@ class MainActivity : Activity() {
         result.put("winRate", if (total > 0) wins * 100.0 / total else 0.0)
         result.put("net", net)
         result.put("profitFactor", when {
-            grossLoss > 0 -> grossProfit / grossLoss
-            grossProfit > 0 -> Double.POSITIVE_INFINITY
-            else -> 0.0
+    grossLoss > 0 -> grossProfit / grossLoss
+    grossProfit > 0 -> -1.0
+    else -> 0.0
+})
         })
         result.put("drawdown", maxDrawdown)
         result.put("mae", if (maeCount > 0) maeTotal / maeCount else 0.0)
