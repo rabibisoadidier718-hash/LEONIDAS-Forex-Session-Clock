@@ -30,8 +30,18 @@ private var menuVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        loadTrades()
-        showDashboard()
+        private fun loadTrades() {
+    trades = JSONArray()
+    val saved = prefs.getString("trades", "[]") ?: "[]"
+    try {
+        val array = JSONArray(saved)
+        for (i in 0 until array.length()) {
+            trades.put(array.getJSONObject(i))
+        }
+    } catch (_: Exception) {
+    }
+        }
+        
     }
 
     private fun loadTrades() {
