@@ -415,7 +415,7 @@ class MainActivity : Activity() {
         val pf = s.optDouble("profitFactor")
         addText(
             screen,
-            "Profit Factor : " + if (pf < 0 ) "∞" else money(pf)
+            "Profit Factor : " + if (pf < 0) "∞" else money(pf)
         )
 
         addText(screen, "Drawdown maximum : ${money(s.optDouble("drawdown"))} Ar")
