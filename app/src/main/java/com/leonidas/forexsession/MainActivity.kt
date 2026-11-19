@@ -216,7 +216,7 @@ class MainActivity : Activity() {
         addText(
             screen,
             "Profit Factor : " +
-                if (pf.isInfinite()) "∞" else money(pf)
+                if (pf < 0) "∞" else money(pf)
         )
         addText(screen, "Drawdown maximum : ${money(stats.optDouble("drawdown"))}")
         addText(screen, "MAE moyen : ${money(stats.optDouble("mae"))}")
