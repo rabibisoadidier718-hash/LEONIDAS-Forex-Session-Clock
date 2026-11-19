@@ -25,6 +25,7 @@ class MainActivity : Activity() {
         getSharedPreferences("leonidas_journal", MODE_PRIVATE)
     }
     private lateinit var root: LinearLayout
+private var trades = JSONArray()
 private var menuVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
