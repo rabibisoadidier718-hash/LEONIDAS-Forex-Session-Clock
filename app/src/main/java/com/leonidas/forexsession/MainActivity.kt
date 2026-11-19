@@ -384,7 +384,9 @@ class MainActivity : Activity() {
                             for (j in 0 until trades.length()) {
                                 if (j != index) updated.put(trades.getJSONObject(j))
                             }
-                            trades.clear()
+                            while (trades.length() > 0) {
+    trades.remove(trades.length() - 1)
+                            }
                             for (j in 0 until updated.length()) {
                                 trades.put(updated.getJSONObject(j))
                             }
