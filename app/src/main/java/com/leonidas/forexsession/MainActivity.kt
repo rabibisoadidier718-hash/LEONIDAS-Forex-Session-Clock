@@ -221,7 +221,7 @@ class MainActivity : Activity() {
         addText(screen, "MAE moyen : ${money(stats.optDouble("mae"))}")
         addText(screen, "MFE moyen : ${money(stats.optDouble("mfe"))}")
 
-        addText(screen, "OBJECTIF CAPITAL : 1 000 000 Ar", 17, gold, true)
+        addText(screen, "OBJECTIF CAPITAL : 1 000 000 USD", 17, gold, true)
         addText(screen, "Les résultats sont calculés à partir des trades saisis.")
 
         addButton(screen, "＋ AJOUTER UN TRADE") { showAddTrade() }
