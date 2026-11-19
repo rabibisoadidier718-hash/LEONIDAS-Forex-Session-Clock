@@ -24,8 +24,8 @@ class MainActivity : Activity() {
     private val prefs by lazy {
         getSharedPreferences("leonidas_journal", MODE_PRIVATE)
     }
-    private val trades = JSONArray()
     private lateinit var root: LinearLayout
+private var menuVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
