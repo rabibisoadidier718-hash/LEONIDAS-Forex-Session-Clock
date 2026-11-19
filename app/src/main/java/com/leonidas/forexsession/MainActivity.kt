@@ -67,13 +67,13 @@ class MainActivity : Activity() {
     private fun addText(
         parent: LinearLayout,
         value: String,
-        size: Float = 16f,
+        size: Number = 16,
         color: Int = white,
         bold: Boolean = false
     ): TextView {
         val view = TextView(this).apply {
             text = value
-            textSize = size
+            textSize = size.toFloat()
             setTextColor(color)
             if (bold) setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(4, 9, 4, 9)
