@@ -1063,17 +1063,35 @@ sessions.addView(
         return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
     }
 
-    private fun countTradesToday(): Int {
-        var count = 0
+    private fun countTradesOnDate(dateValue: String): Int {
+    var count = 0
 
-        for (i in 0 until trades.length()) {
-            if (trades.optJSONObject(i)?.optString("date") == today()) {
-                count++
-            }
+    for (i in 0 until trades.length()) {
+        if (trades.optJSONObject(i)?.optString("date") == dateValue) {
+            count++
         }
-
-        return count
     }
+
+    return count
+}
+
+private fun countTradesToday(): Int {
+    return countTradesOnDate(today())
+}
+
+private fun dailyPnlOnDate(dateValue: String): Double {
+    var total = 0.0
+
+    for (i in 0 until trades.length()) {
+        val trade = trades.optJSONObject(i) ?: continue
+
+        if (trade.optString("date") == dateValue) {
+            total += trade.optDouble("pnl", 0.0)
+        }
+    }
+
+    return total
+}
 
     private fun showAddTrade() {
         baseScreen("NOUVEAU TRADE", "ENREGISTREMENT DU JOURNAL")
