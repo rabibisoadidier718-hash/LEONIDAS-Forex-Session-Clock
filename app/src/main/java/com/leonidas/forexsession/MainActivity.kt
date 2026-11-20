@@ -161,7 +161,7 @@ class MainActivity : Activity() {
         }
         header.addView(settings)
         root.addView(header, LinearLayout.LayoutParams(-1, -2))
-        val scroll = ScrollView(this).apply { fillViewport = true }
+        val scroll = ScrollView(this).apply { setFillViewport(true) }
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(12), dp(14), dp(18))
