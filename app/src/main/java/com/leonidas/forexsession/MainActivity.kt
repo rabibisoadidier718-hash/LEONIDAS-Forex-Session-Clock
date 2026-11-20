@@ -1188,7 +1188,7 @@ private fun dailyPnlOnDate(dateValue: String): Double {
                         return@button
                     }
 
-                    if (countTradesToday() >= maxTradesPerDay) {
+                    if (countTradesOnDate(date.text.toString().trim()) >= maxTradesPerDay) {
                         AlertDialog.Builder(this)
                             .setTitle("DISCIPLINE VERROUILLÉE")
                             .setMessage(
