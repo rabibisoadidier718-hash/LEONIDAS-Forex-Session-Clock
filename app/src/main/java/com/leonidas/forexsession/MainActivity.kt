@@ -1200,7 +1200,10 @@ private fun dailyPnlOnDate(dateValue: String): Double {
                         return@button
                     }
 
-                    if (dailyRiskLimit > 0 && num(pnl) < -dailyRiskLimit) {
+                    val projectedDailyPnl =
+    dailyPnlOnDate(date.text.toString().trim()) + num(pnl)
+
+if (dailyRiskLimit > 0 && projectedDailyPnl < -dailyRiskLimit) {
                         AlertDialog.Builder(this)
                             .setTitle("ALERTE DE RISQUE")
                             .setMessage(
