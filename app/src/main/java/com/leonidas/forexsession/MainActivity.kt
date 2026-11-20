@@ -643,14 +643,16 @@ class MainActivity : Activity() {
             sessions.addView(row)
             gap(sessions, 5)
 
-            sessions.addView(
-                View(this),
-                LinearLayout.LayoutParams(-1, dp(5)).apply {
-                    setMargins(0, dp(3), 0, dp(3))
-                }
-            ).apply {
-                background = rounded(tint)
-            }
+            val sessionDivider = View(this).apply {
+    background = rounded(tint)
+}
+
+sessions.addView(
+    sessionDivider,
+    LinearLayout.LayoutParams(-1, dp(5)).apply {
+        setMargins(0, dp(3), 0, dp(3))
+    }
+)
         }
 
         val map = card()
