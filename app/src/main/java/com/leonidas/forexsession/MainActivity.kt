@@ -1,4 +1,3 @@
-
 package com.leonidas.forexsession
 
 import android.app.Activity
@@ -118,12 +117,12 @@ class MainActivity : Activity() {
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             addView(
-    content,
-    android.view.ViewGroup.LayoutParams(
-        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-    )
-)
+                content,
+                android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
         }
 
         root.addView(
@@ -650,9 +649,9 @@ class MainActivity : Activity() {
 
             val resultText = TextView(this).apply {
                 text = if (dayTrades.isNotEmpty()) {
-    (if (pnl >= 0) "+" else "") +
-        String.format(Locale.US, "%.0f", pnl)
-} else ""
+                    (if (pnl >= 0) "+" else "") +
+                        String.format(Locale.US, "%.0f", pnl)
+                } else ""
                 textSize = 8f
                 gravity = Gravity.CENTER
                 setTextColor(
