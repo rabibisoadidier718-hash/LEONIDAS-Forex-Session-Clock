@@ -650,9 +650,9 @@ class MainActivity : Activity() {
 
             val resultText = TextView(this).apply {
                 text = if (dayTrades.isNotEmpty()) {
-                    if (pnl >= 0) "+" else ""
-                    + String.format(Locale.US, "%.0f", pnl)
-                } else ""
+    (if (pnl >= 0) "+" else "") +
+        String.format(Locale.US, "%.0f", pnl)
+} else ""
                 textSize = 8f
                 gravity = Gravity.CENTER
                 setTextColor(
