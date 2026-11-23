@@ -1,3 +1,4 @@
+
 package com.leonidas.forexsession
 
 import android.app.Activity
@@ -9,8 +10,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import android.text.InputType
 import org.json.JSONArray
@@ -19,9 +22,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
@@ -36,6 +39,9 @@ class MainActivity : Activity() {
     private val red = Color.rgb(245, 85, 100)
     private val purple = Color.rgb(175, 125, 255)
     private val muted = Color.rgb(155, 170, 190)
+
+    private val madagascarTimeZone =
+        TimeZone.getTimeZone("Indian/Antananarivo")
 
     private lateinit var root: LinearLayout
     private lateinit var content: LinearLayout
@@ -53,8 +59,45 @@ class MainActivity : Activity() {
 
     private var selectedTradeDate = today()
 
-    private fun today(): String =
-        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    private fun today(): String {
+        return SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            timeZone = madagascarTimeZone
+        }.format(Date())
+    }
+
+    private fun madagascarDate(): String {
+        return SimpleDateFormat(
+            "EEEE dd MMMM yyyy",
+            Locale.FRENCH
+        ).apply {
+            timeZone = madagascarTimeZone
+        }.format(Date()).uppercase(Locale.FRENCH)
+    }
+
+    private fun newMadagascarCalendar(): Calendar {
+        return Calendar.getInstance(madagascarTimeZone, Locale.US)
+    }
+
+    private fun parseDate(value: String): Calendar {
+        val cal = newMadagascarCalendar()
+        try {
+            val format = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                isLenient = false
+                timeZone = madagascarTimeZone
+            }
+            val parsed = format.parse(value)
+            if (parsed != null) cal.time = parsed
+        } catch (_: Exception) {
+            cal.time = Date()
+        }
+        return cal
+    }
+
+    private fun formatDate(cal: Calendar): String {
+        return SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            timeZone = madagascarTimeZone
+        }.format(cal.time)
+    }
 
     private fun money(value: Double): String =
         String.format(Locale.US, "%,.2f %s", value, currency)
@@ -133,9 +176,9 @@ class MainActivity : Activity() {
             isFillViewport = true
             addView(
                 content,
-                android.view.ViewGroup.LayoutParams(
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
                 )
             )
         }
@@ -250,7 +293,7 @@ class MainActivity : Activity() {
         val c = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), dp(12), dp(14), dp(12))
-            background = android.graphics.drawable.GradientDrawable().apply {
+            background = GradientDrawable().apply {
                 setColor(panel)
                 cornerRadius = dp(15).toFloat()
                 setStroke(dp(1), Color.rgb(35, 65, 90))
@@ -485,18 +528,14 @@ class MainActivity : Activity() {
 
         addText("BIENVENUE, $firstName", 17f, gold, true)
         addText("Votre discipline construit votre capital.", 12f, muted)
-        addText(
-            SimpleDateFormat("EEEE dd MMMM yyyy", Locale.FRENCH)
-                .format(Date()).uppercase(Locale.FRENCH),
-            10f,
-            cyan
-        )
+        addText(madagascarDate(), 10f, cyan)
+        addText("HEURE LOCALE : ${clockTime("Indian/Antananarivo")}", 12f, gold, true)
         addSpace(8)
 
         val c = card()
         addText("NEXUS // PERFORMANCE DASHBOARD", 14f, cyan, true)
 
-        line(c, "Capital initial", money(initialCapital))
+        line(c, "Capital initial", money(initialCapital), gold)
         line(
             c,
             "Solde actuel",
@@ -550,7 +589,7 @@ class MainActivity : Activity() {
         line(sessions, "New York", clockTime("America/New_York"))
 
         addText(
-            "Les horaires changent selon l'heure d'été des différents pays.",
+            "Les horaires des sessions changent selon l'heure d'été des différents pays.",
             11f,
             muted
         )
@@ -656,7 +695,7 @@ class MainActivity : Activity() {
         return try {
             SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                 .apply {
-                    timeZone = java.util.TimeZone.getTimeZone(zone)
+                    timeZone = TimeZone.getTimeZone(zone)
                 }
                 .format(Date())
         } catch (_: Exception) {
@@ -664,10 +703,292 @@ class MainActivity : Activity() {
         }
     }
 
+    // ---------------------------------------------------------
+    // CALENDRIER MENSUEL
+    // ---------------------------------------------------------
+
+    private fun showCalendar(
+        selectedMonth: Calendar = newMadagascarCalendar(),
+        selectedDate: String = today()
+    ) {
+        val month = selectedMonth.clone() as Calendar
+        month.timeZone = madagascarTimeZone
+        month.set(Calendar.DAY_OF_MONTH, 1)
+
+        refresh("Calendrier")
+
+        val monthName = SimpleDateFormat(
+            "MMMM yyyy",
+            Locale.FRENCH
+        ).apply {
+            timeZone = madagascarTimeZone
+        }.format(month.time).uppercase(Locale.FRENCH)
+
+        val topCard = card()
+        addText("CALENDRIER DE TRADING", 15f, cyan, true)
+
+        val monthRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val previous = Button(this).apply {
+            text = "‹"
+            textSize = 22f
+            setTextColor(gold)
+            setBackgroundColor(panelLight)
+            setOnClickListener {
+                val next = month.clone() as Calendar
+                next.add(Calendar.MONTH, -1)
+                showCalendar(next, selectedDate)
+            }
+        }
+
+        val monthTitle = TextView(this).apply {
+            text = monthName
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setTextColor(white)
+            setTypeface(null, Typeface.BOLD)
+        }
+
+        val next = Button(this).apply {
+            text = "›"
+            textSize = 22f
+            setTextColor(gold)
+            setBackgroundColor(panelLight)
+            setOnClickListener {
+                val nextMonth = month.clone() as Calendar
+                nextMonth.add(Calendar.MONTH, 1)
+                showCalendar(nextMonth, selectedDate)
+            }
+        }
+
+        monthRow.addView(previous, LinearLayout.LayoutParams(dp(52), dp(48)))
+        monthRow.addView(monthTitle, LinearLayout.LayoutParams(0, dp(48), 1f))
+        monthRow.addView(next, LinearLayout.LayoutParams(dp(52), dp(48)))
+        topCard.addView(monthRow)
+
+        val monthTrades = mutableListOf<JSONObject>()
+        for (i in 0 until trades.length()) {
+            val trade = trades.optJSONObject(i) ?: continue
+            val tradeDate = trade.optString("date")
+            if (tradeDate.startsWith(
+                    SimpleDateFormat("yyyy-MM", Locale.US)
+                        .apply { timeZone = madagascarTimeZone }
+                        .format(month.time)
+                )
+            ) {
+                monthTrades.add(trade)
+            }
+        }
+
+        val monthPnl = monthTrades.sumOf { it.optDouble("pnl", 0.0) }
+        line(topCard, "Trades du mois", monthTrades.size.toString())
+        line(
+            topCard,
+            "P&L du mois",
+            money(monthPnl),
+            if (monthPnl > 0) green else if (monthPnl < 0) red else muted
+        )
+
+        val calendarCard = card()
+        addText("RÉSULTATS PAR JOUR", 14f, cyan, true)
+
+        val grid = GridLayout(this).apply {
+            columnCount = 8
+            rowCount = 7
+            useDefaultMargins = false
+        }
+
+        val headers = listOf("SEM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM")
+
+        headers.forEachIndexed { index, label ->
+            val tv = TextView(this).apply {
+                text = label
+                textSize = 9f
+                gravity = Gravity.CENTER
+                setTextColor(if (index == 0) gold else cyan)
+                setTypeface(null, Typeface.BOLD)
+                setPadding(0, dp(5), 0, dp(5))
+            }
+            val params = GridLayout.LayoutParams(
+                GridLayout.spec(0),
+                GridLayout.spec(index, 1f)
+            ).apply {
+                width = 0
+                height = dp(32)
+                setMargins(dp(1), dp(1), dp(1), dp(1))
+            }
+            grid.addView(tv, params)
+        }
+
+        val firstDay = month.clone() as Calendar
+        val dayOfWeek = firstDay.get(Calendar.DAY_OF_WEEK)
+        val offset = (dayOfWeek + 5) % 7
+        firstDay.add(Calendar.DAY_OF_MONTH, -offset)
+
+        val monthKey = SimpleDateFormat("yyyy-MM", Locale.US)
+            .apply { timeZone = madagascarTimeZone }
+            .format(month.time)
+
+        for (week in 0 until 6) {
+            val weekStart = firstDay.clone() as Calendar
+            weekStart.add(Calendar.DAY_OF_MONTH, week * 7)
+
+            val weekEnd = weekStart.clone() as Calendar
+            weekEnd.add(Calendar.DAY_OF_MONTH, 6)
+
+            val weekPnl = tradesInRange(
+                formatDate(weekStart),
+                formatDate(weekEnd)
+            ).sumOf { it.optDouble("pnl", 0.0) }
+
+            val weekCount = tradesInRange(
+                formatDate(weekStart),
+                formatDate(weekEnd)
+            ).size
+
+            val weekLabel = TextView(this).apply {
+                text = "S${weekStart.get(Calendar.WEEK_OF_YEAR)}"
+                textSize = 9f
+                gravity = Gravity.CENTER
+                setTextColor(gold)
+                setTypeface(null, Typeface.BOLD)
+            }
+
+            val weekParams = GridLayout.LayoutParams(
+                GridLayout.spec(week + 1),
+                GridLayout.spec(0, 1f)
+            ).apply {
+                width = 0
+                height = dp(66)
+                setMargins(dp(1), dp(1), dp(1), dp(1))
+            }
+            grid.addView(weekLabel, weekParams)
+
+            for (dayIndex in 0 until 7) {
+                val dayCal = weekStart.clone() as Calendar
+                dayCal.add(Calendar.DAY_OF_MONTH, dayIndex)
+
+                val dateText = formatDate(dayCal)
+                val dayNumber = dayCal.get(Calendar.DAY_OF_MONTH)
+                val sameMonth = dateText.startsWith(monthKey)
+                val dayPnl = dailyPnlOnDate(dateText)
+                val dayCount = tradesOnDate(dateText).size
+                val isToday = dateText == today()
+                val isSelected = dateText == selectedDate
+
+                val dayButton = TextView(this).apply {
+                    text = buildString {
+                        append(dayNumber)
+                        if (dayCount > 0) {
+                            append("\n")
+                            append(if (dayPnl > 0) "+" else "")
+                            append(String.format(Locale.US, "%.0f", dayPnl))
+                            append("\n")
+                            append(dayCount)
+                            append(" T")
+                        }
+                    }
+                    textSize = if (dayCount > 0) 9f else 12f
+                    gravity = Gravity.CENTER
+                    setTypeface(null, Typeface.BOLD)
+                    setTextColor(
+                        when {
+                            !sameMonth -> Color.rgb(85, 96, 112)
+                            dayPnl > 0 -> green
+                            dayPnl < 0 -> red
+                            else -> white
+                        }
+                    )
+
+                    background = GradientDrawable().apply {
+                        setColor(
+                            when {
+                                dayPnl > 0 -> Color.rgb(13, 48, 43)
+                                dayPnl < 0 -> Color.rgb(55, 25, 37)
+                                else -> panelLight
+                            }
+                        )
+                        cornerRadius = dp(7).toFloat()
+                        setStroke(
+                            dp(if (isToday || isSelected) 2 else 1),
+                            when {
+                                isSelected -> cyan
+                                isToday -> gold
+                                else -> Color.rgb(42, 58, 78)
+                            }
+                        )
+                    }
+
+                    setOnClickListener {
+                        showDayDetails(dateText)
+                    }
+                }
+
+                val dayParams = GridLayout.LayoutParams(
+                    GridLayout.spec(week + 1),
+                    GridLayout.spec(dayIndex + 1, 1f)
+                ).apply {
+                    width = 0
+                    height = dp(66)
+                    setMargins(dp(1), dp(1), dp(1), dp(1))
+                }
+
+                grid.addView(dayButton, dayParams)
+            }
+        }
+
+        calendarCard.addView(
+            grid,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        val legend = card()
+        addText("LÉGENDE", 13f, cyan, true)
+        line(legend, "Journée gagnante", "VERT", green)
+        line(legend, "Journée perdante", "ROUGE", red)
+        line(legend, "Aujourd'hui", "CONTOUR OR", gold)
+        line(legend, "Jour sélectionné", "CONTOUR BLEU", cyan)
+        line(legend, "T = nombre de trades", "P&L = résultat", white)
+
+        val actions = card()
+        addText("ACTIONS RAPIDES", 14f, cyan, true)
+        makeButton(actions, "AJOUTER UN TRADE AUJOURD'HUI") {
+            showTradeForm(today(), true)
+        }
+        makeButton(actions, "RETOUR À L'ACCUEIL") {
+            showHome()
+        }
+    }
+
+    private fun tradesInRange(
+        startDate: String,
+        endDate: String
+    ): List<JSONObject> {
+        val result = mutableListOf<JSONObject>()
+        for (i in 0 until trades.length()) {
+            val trade = trades.optJSONObject(i) ?: continue
+            val date = trade.optString("date")
+            if (date >= startDate && date <= endDate) {
+                result.add(trade)
+            }
+        }
+        return result
+    }
+
+    // ---------------------------------------------------------
+    // FORMULAIRE DE TRADE
+    // ---------------------------------------------------------
+
     private fun showTradeForm(
-    dateValue: String = today(),
-    returnToCalendar: Boolean = false
-) {
+        dateValue: String = today(),
+        returnToCalendar: Boolean = false
+    ) {
         refresh("Trade")
         selectedTradeDate = dateValue
 
@@ -707,8 +1028,10 @@ class MainActivity : Activity() {
             val dateText = date.text.toString().trim()
 
             val validDate = try {
-                val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                format.isLenient = false
+                val format = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                    isLenient = false
+                    timeZone = madagascarTimeZone
+                }
                 format.parse(dateText) != null
             } catch (_: Exception) {
                 false
@@ -749,17 +1072,21 @@ class MainActivity : Activity() {
             }
 
             trades.put(obj)
-saveTrades()
+            saveTrades()
 
-message("Trade enregistré", "Ton trade a été sauvegardé.")
+            message("Trade enregistré", "Ton trade a été sauvegardé.")
 
-if (returnToCalendar) {
-    showDayDetails(dateText)
-} else {
-    showJournal()
-}
+            if (returnToCalendar) {
+                showDayDetails(dateText)
+            } else {
+                showJournal()
+            }
         }
     }
+
+    // ---------------------------------------------------------
+    // JOURNAL
+    // ---------------------------------------------------------
 
     private fun showJournal() {
         refresh("Journal")
@@ -828,103 +1155,106 @@ if (returnToCalendar) {
                     }
                     .show()
             }
+
+            makeButton(tradeCard, "VOIR DANS LE CALENDRIER") {
+                showDayDetails(obj.optString("date"))
+            }
         }
     }
 
-private fun showDayDetails(date: String) {
-    refresh("Détail du jour")
+    // ---------------------------------------------------------
+    // DÉTAIL D'UNE JOURNÉE
+    // ---------------------------------------------------------
 
-    val dayTrades = tradesOnDate(date)
-    val dailyPnl = dailyPnlOnDate(date)
+    private fun showDayDetails(date: String) {
+        refresh("Détail du jour")
 
-    val summary = card()
-    addText("RÉSULTATS DE LA JOURNÉE", 15f, cyan, true)
+        val dayTrades = tradesOnDate(date)
+        val dailyPnl = dailyPnlOnDate(date)
 
-    line(summary, "Date", date)
-    line(summary, "Nombre de trades", dayTrades.size.toString())
-    line(
-        summary,
-        "P&L net",
-        money(dailyPnl),
-        if (dailyPnl > 0) green else if (dailyPnl < 0) red else muted
-    )
+        val summary = card()
+        addText("RÉSULTATS DE LA JOURNÉE", 15f, cyan, true)
 
-    if (dayTrades.isEmpty()) {
-        addText("Aucun trade enregistré pour cette journée.", 13f, muted)
-    }
-
-    dayTrades.forEach { trade ->
-        val tradeCard = card()
-        val pnl = trade.optDouble("pnl", 0.0)
-
-        val status = when {
-            pnl > 0 -> "TP"
-            pnl < 0 -> "SL"
-            else -> "BE"
-        }
-
-        val statusColor = when {
-            pnl > 0 -> green
-            pnl < 0 -> red
-            else -> muted
-        }
-
-        addText(
-            "${trade.optString("asset")} — ${trade.optString("direction")}",
-            15f,
-            cyan,
-            true
+        line(summary, "Date", date)
+        line(summary, "Nombre de trades", dayTrades.size.toString())
+        line(
+            summary,
+            "P&L net",
+            money(dailyPnl),
+            if (dailyPnl > 0) green else if (dailyPnl < 0) red else muted
         )
 
-        line(tradeCard, "Résultat", status, statusColor)
-        line(tradeCard, "P&L", money(pnl), statusColor)
-        line(tradeCard, "Prix d'entrée", trade.optDouble("entry", 0.0).toString())
-        line(tradeCard, "Stop Loss", trade.optDouble("stop", 0.0).toString())
-        line(tradeCard, "Take Profit", trade.optDouble("target", 0.0).toString())
-        line(tradeCard, "Lot", trade.optDouble("lot", 0.0).toString())
-        line(tradeCard, "Session", trade.optString("session"))
+        if (dayTrades.isEmpty()) {
+            addText("Aucun trade enregistré pour cette journée.", 13f, muted)
+        }
 
-        makeButton(tradeCard, "SUPPRIMER CE TRADE") {
-            AlertDialog.Builder(this)
-                .setTitle("Supprimer ce trade ?")
-                .setMessage("Cette action est définitive.")
-                .setNegativeButton("ANNULER", null)
-                .setPositiveButton("SUPPRIMER") { _, _ ->
-                    val newArray = JSONArray()
+        dayTrades.forEach { trade ->
+            val tradeCard = card()
+            val pnl = trade.optDouble("pnl", 0.0)
 
-                    for (i in 0 until trades.length()) {
-                        val item = trades.optJSONObject(i) ?: continue
+            val status = when {
+                pnl > 0 -> "TP"
+                pnl < 0 -> "SL"
+                else -> "BE"
+            }
 
-                        if (item.optLong("id") != trade.optLong("id")) {
-                            newArray.put(item)
+            val statusColor = when {
+                pnl > 0 -> green
+                pnl < 0 -> red
+                else -> muted
+            }
+
+            addText(
+                "${trade.optString("asset")} — ${trade.optString("direction")}",
+                15f,
+                cyan,
+                true
+            )
+
+            line(tradeCard, "Résultat indicatif", status, statusColor)
+            line(tradeCard, "P&L", money(pnl), statusColor)
+            line(tradeCard, "Prix d'entrée", trade.optDouble("entry", 0.0).toString())
+            line(tradeCard, "Stop Loss", trade.optDouble("stop", 0.0).toString())
+            line(tradeCard, "Take Profit", trade.optDouble("target", 0.0).toString())
+            line(tradeCard, "Lot", trade.optDouble("lot", 0.0).toString())
+            line(tradeCard, "Session", trade.optString("session"))
+
+            makeButton(tradeCard, "SUPPRIMER CE TRADE") {
+                AlertDialog.Builder(this)
+                    .setTitle("Supprimer ce trade ?")
+                    .setMessage("Cette action est définitive.")
+                    .setNegativeButton("ANNULER", null)
+                    .setPositiveButton("SUPPRIMER") { _, _ ->
+                        val newArray = JSONArray()
+
+                        for (i in 0 until trades.length()) {
+                            val item = trades.optJSONObject(i) ?: continue
+                            if (item.optLong("id") != trade.optLong("id")) {
+                                newArray.put(item)
+                            }
                         }
+
+                        trades = newArray
+                        saveTrades()
+                        showDayDetails(date)
                     }
+                    .show()
+            }
+        }
 
-                    trades = newArray
-                    saveTrades()
-                    showDayDetails(date)
-                }
-                .show()
+        makeButton(summary, "+ AJOUTER UN TRADE À CETTE DATE") {
+            showTradeForm(date, true)
+        }
+
+        makeButton(summary, "RETOUR AU CALENDRIER") {
+            showCalendar(parseDate(date), date)
         }
     }
 
-    makeButton(summary, "+ AJOUTER UN TRADE À CETTE DATE") {
-        showTradeForm(date, true)
-    }
+    // ---------------------------------------------------------
+    // STATISTIQUES
+    // ---------------------------------------------------------
 
-    makeButton(summary, "RETOUR AU CALENDRIER") {
-        val cal = Calendar.getInstance()
-        try {
-            val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-            format.isLenient = false
-            cal.time = format.parse(date) ?: Date()
-        } catch (_: Exception) {
-            cal.time = Date()
-        }
-
-        showCalendar(cal, date)
-    }
-}
     private fun showStats() {
         refresh("Statistiques")
 
@@ -946,9 +1276,11 @@ private fun showDayDetails(date: String) {
         line(c, "Profit factor", "%.2f".format(profitFactor()), purple)
         line(c, "Gain moyen", money(averageWin()), green)
         line(c, "Perte moyenne", money(averageLoss()), red)
-        line(c, "P&L moyen / trade", money(
-            if (trades.length() > 0) totalPnl() / trades.length() else 0.0
-        ))
+        line(
+            c,
+            "P&L moyen / trade",
+            money(if (trades.length() > 0) totalPnl() / trades.length() else 0.0)
+        )
         line(c, "Drawdown maximum", "%.2f %%".format(maxDrawdown()), red)
         line(c, "MAE moyen", money(averageField("mae")))
         line(c, "MFE moyen", money(averageField("mfe")))
@@ -960,13 +1292,10 @@ private fun showDayDetails(date: String) {
             when {
                 trades.length() == 0 ->
                     "Commence par enregistrer tes trades. La discipline commence par le suivi."
-
                 winRate() >= 60 ->
                     "Bon taux de réussite. Vérifie aussi ton ratio gain/perte et la stabilité de tes résultats."
-
                 winRate() >= 45 ->
                     "Analyse les trades perdants et identifie les erreurs répétées."
-
                 else ->
                     "Réduis le risque, respecte ton plan et évite les trades impulsifs."
             },
@@ -974,6 +1303,10 @@ private fun showDayDetails(date: String) {
             white
         )
     }
+
+    // ---------------------------------------------------------
+    // MENU
+    // ---------------------------------------------------------
 
     private fun showMenu() {
         refresh("Menu")
@@ -993,7 +1326,12 @@ private fun showDayDetails(date: String) {
         addText("LEONIDAS SPARTAN GOLD", 13f, gold, true)
         addText("Trading journal professionnel", 12f, muted)
         addText("Mode de stockage : local hors ligne", 12f, muted)
+        addText("Fuseau horaire : Madagascar UTC+3", 12f, muted)
     }
+
+    // ---------------------------------------------------------
+    // CALCULATEUR DE RISQUE
+    // ---------------------------------------------------------
 
     private fun showRiskCalculator() {
         refresh("Calculateur de risque")
@@ -1003,7 +1341,7 @@ private fun showDayDetails(date: String) {
 
         val capital = input(
             c,
-            "CAPITAL DISPONIBLE ($)",
+            "CAPITAL DISPONIBLE",
             currentBalance().toString(),
             true
         )
@@ -1036,6 +1374,10 @@ private fun showDayDetails(date: String) {
         }
     }
 
+    // ---------------------------------------------------------
+    // CALCULATEUR DE LOTS
+    // ---------------------------------------------------------
+
     private fun showLotCalculator() {
         refresh("Calculateur de lots")
 
@@ -1045,7 +1387,7 @@ private fun showDayDetails(date: String) {
 
         val capital = input(
             c,
-            "CAPITAL DISPONIBLE ($)",
+            "CAPITAL DISPONIBLE",
             currentBalance().toString(),
             true
         )
@@ -1053,7 +1395,7 @@ private fun showDayDetails(date: String) {
         val stop = input(c, "DISTANCE DU STOP EN POINTS", "", true)
         val pointValue = input(
             c,
-            "VALEUR D'UN POINT POUR 1 LOT ($)",
+            "VALEUR D'UN POINT POUR 1 LOT",
             "1",
             true
         )
@@ -1085,6 +1427,10 @@ private fun showDayDetails(date: String) {
                 "\n\nVérifie la valeur du point et les spécifications du contrat auprès de ton broker."
         }
     }
+
+    // ---------------------------------------------------------
+    // OBJECTIFS FINANCIERS
+    // ---------------------------------------------------------
 
     private fun showObjectives() {
         refresh("Objectifs")
@@ -1118,6 +1464,10 @@ private fun showDayDetails(date: String) {
             muted
         )
     }
+
+    // ---------------------------------------------------------
+    // PARAMÈTRES ET CAPITAL INITIAL
+    // ---------------------------------------------------------
 
     private fun showSettings() {
         refresh("Paramètres")
@@ -1168,10 +1518,11 @@ private fun showDayDetails(date: String) {
             val cap = capital.text.toString().toDoubleOrNull()
             val obj = target.text.toString().toDoubleOrNull()
             val risk = dailyRisk.text.toString().toDoubleOrNull()
-            val max = maxTrades.text.toString().toIntOrNull()
+            val maxTradesValue = maxTrades.text.toString().toIntOrNull()
 
-            if (cap == null || obj == null || risk == null || max == null ||
-                cap < 0 || obj <= 0 || risk <= 0 || max <= 0
+            if (cap == null || obj == null || risk == null ||
+                maxTradesValue == null || cap < 0 || obj <= 0 ||
+                risk <= 0 || maxTradesValue <= 0
             ) {
                 message(
                     "Valeurs incorrectes",
@@ -1184,14 +1535,14 @@ private fun showDayDetails(date: String) {
             initialCapital = cap
             targetAmount = obj
             dailyRiskLimit = risk
-            maxTradesPerDay = max
+            maxTradesPerDay = maxTradesValue
             currency = currencySpinner.selectedItem.toString()
 
             saveSettings()
 
             message(
                 "Paramètres sauvegardés",
-                "Tes paramètres ont été enregistrés."
+                "Ton capital initial et tes paramètres ont été enregistrés."
             )
 
             showHome()
@@ -1202,8 +1553,18 @@ private fun showDayDetails(date: String) {
         addText("LEONIDAS SPARTAN GOLD", 14f, white, true)
         addText("NEXUS Trading Journal", 12f, muted)
         addText("Les données sont sauvegardées sur cet appareil.", 12f, muted)
+        addText("Fuseau horaire : Madagascar UTC+3.", 12f, muted)
         addText("Objectif de référence : 1 000 000 USD.", 12f, gold)
+        addText(
+            "Attention : changer la devise modifie l'affichage, mais ne convertit pas automatiquement les montants.",
+            11f,
+            muted
+        )
     }
+
+    // ---------------------------------------------------------
+    // MESSAGE
+    // ---------------------------------------------------------
 
     private fun message(title: String, text: String) {
         AlertDialog.Builder(this)
@@ -1213,4 +1574,3 @@ private fun showDayDetails(date: String) {
             .show()
     }
 }
-
