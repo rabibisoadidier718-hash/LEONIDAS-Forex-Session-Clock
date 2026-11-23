@@ -664,7 +664,10 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showTradeForm(dateValue: String = today()) {
+    private fun showTradeForm(
+    dateValue: String = today(),
+    returnToCalendar: Boolean = false
+) {
         refresh("Trade")
         selectedTradeDate = dateValue
 
