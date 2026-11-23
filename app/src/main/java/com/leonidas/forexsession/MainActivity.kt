@@ -831,199 +831,100 @@ if (returnToCalendar) {
         }
     }
 
-    private fun showCalendar(
-        selectedMonth: Calendar = Calendar.getInstance(),
-        selectedDate: String = today()
-    ) {
-        refresh("Calendrier")
+private fun showDayDetails(date: String) {
+    refresh("Détail du jour")
 
-        val month = selectedMonth.clone() as Calendar
-        month.set(Calendar.DAY_OF_MONTH, 1)
+    val dayTrades = tradesOnDate(date)
+    val dailyPnl = dailyPnlOnDate(date)
 
-        val monthName = SimpleDateFormat("MMMM yyyy", Locale.FRENCH)
-            .format(month.time)
-            .replaceFirstChar { it.uppercase() }
+    val summary = card()
+    addText("RÉSULTATS DE LA JOURNÉE", 15f, cyan, true)
 
-        val top = card()
-        addText("CALENDRIER DE TRADING", 15f, cyan, true)
+    line(summary, "Date", date)
+    line(summary, "Nombre de trades", dayTrades.size.toString())
+    line(
+        summary,
+        "P&L net",
+        money(dailyPnl),
+        if (dailyPnl > 0) green else if (dailyPnl < 0) red else muted
+    )
 
-        val controls = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+    if (dayTrades.isEmpty()) {
+        addText("Aucun trade enregistré pour cette journée.", 13f, muted)
+    }
+
+    dayTrades.forEach { trade ->
+        val tradeCard = card()
+        val pnl = trade.optDouble("pnl", 0.0)
+
+        val status = when {
+            pnl > 0 -> "TP"
+            pnl < 0 -> "SL"
+            else -> "BE"
         }
 
-        val previous = Button(this).apply {
-            text = "‹"
-            setTextColor(cyan)
-            setBackgroundColor(navy)
-            setOnClickListener {
-                val next = month.clone() as Calendar
-                next.add(Calendar.MONTH, -1)
-                showCalendar(next, selectedDate)
-            }
+        val statusColor = when {
+            pnl > 0 -> green
+            pnl < 0 -> red
+            else -> muted
         }
 
-        val title = TextView(this).apply {
-            text = monthName
-            textSize = 16f
-            setTextColor(white)
-            gravity = Gravity.CENTER
-            setTypeface(null, Typeface.BOLD)
-        }
-
-        val next = Button(this).apply {
-            text = "›"
-            setTextColor(cyan)
-            setBackgroundColor(navy)
-            setOnClickListener {
-                val nextMonth = month.clone() as Calendar
-                nextMonth.add(Calendar.MONTH, 1)
-                showCalendar(nextMonth, selectedDate)
-            }
-        }
-
-        controls.addView(previous, LinearLayout.LayoutParams(0, dp(45), 1f))
-        controls.addView(title, LinearLayout.LayoutParams(0, dp(45), 4f))
-        controls.addView(next, LinearLayout.LayoutParams(0, dp(45), 1f))
-        top.addView(controls)
-
-        val grid = GridLayout(this).apply {
-            columnCount = 7
-            rowCount = 7
-            setPadding(0, dp(8), 0, dp(8))
-        }
-
-        val days = listOf("L", "M", "M", "J", "V", "S", "D")
-
-        days.forEach { day ->
-            val tv = TextView(this).apply {
-                text = day
-                gravity = Gravity.CENTER
-                setTextColor(cyan)
-                textSize = 12f
-                setTypeface(null, Typeface.BOLD)
-            }
-            grid.addView(tv, GridLayout.LayoutParams().apply {
-                width = 0
-                height = dp(34)
-                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            })
-        }
-
-        val firstDay = (month.get(Calendar.DAY_OF_WEEK) + 5) % 7
-        val count = month.getActualMaximum(Calendar.DAY_OF_MONTH)
-
-        repeat(firstDay) {
-            val empty = TextView(this)
-            grid.addView(empty, GridLayout.LayoutParams().apply {
-                width = 0
-                height = dp(55)
-                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-            })
-        }
-
-        for (day in 1..count) {
-            val dateCal = month.clone() as Calendar
-            dateCal.set(Calendar.DAY_OF_MONTH, day)
-
-            val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                .format(dateCal.time)
-
-            val dayTrades = tradesOnDate(dateKey)
-            val pnl = dailyPnlOnDate(dateKey)
-
-            val cell = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER
-                setPadding(dp(1), dp(2), dp(1), dp(2))
-
-                setBackgroundColor(
-                    when {
-                        dateKey == selectedDate -> gold
-                        dayTrades.isNotEmpty() && pnl > 0 ->
-                            Color.rgb(22, 75, 63)
-                        dayTrades.isNotEmpty() && pnl < 0 ->
-                            Color.rgb(85, 38, 50)
-                        else -> panelLight
-                    }
-                )
-
-                setOnClickListener {
-                    showCalendar(month, dateKey)
-                }
-            }
-
-            val dayText = TextView(this).apply {
-                text = day.toString()
-                textSize = 13f
-                gravity = Gravity.CENTER
-                setTextColor(if (dateKey == selectedDate) navy else white)
-                setTypeface(null, Typeface.BOLD)
-            }
-
-            val resultText = TextView(this).apply {
-                text = if (dayTrades.isNotEmpty()) {
-                    (if (pnl >= 0) "+" else "") +
-                        String.format(Locale.US, "%.0f", pnl)
-                } else ""
-
-                textSize = 8f
-                gravity = Gravity.CENTER
-                setTextColor(
-                    if (dateKey == selectedDate) navy
-                    else if (pnl >= 0) green else red
-                )
-            }
-
-            cell.addView(dayText)
-            cell.addView(resultText)
-
-            val params = GridLayout.LayoutParams().apply {
-                width = 0
-                height = dp(55)
-                columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-                setMargins(dp(2), dp(2), dp(2), dp(2))
-            }
-
-            grid.addView(cell, params)
-        }
-
-        top.addView(grid)
-
-        val details = card()
-        addText("DÉTAIL DE LA JOURNÉE", 15f, cyan, true)
-
-        val selectedTrades = tradesOnDate(selectedDate)
-        val dailyPnl = dailyPnlOnDate(selectedDate)
-
-        line(details, "Date sélectionnée", selectedDate)
-        line(details, "Nombre de trades", selectedTrades.size.toString())
-        line(
-            details,
-            "Résultat journalier",
-            money(dailyPnl),
-            if (dailyPnl >= 0) green else red
+        addText(
+            "${trade.optString("asset")} — ${trade.optString("direction")}",
+            15f,
+            cyan,
+            true
         )
 
-        if (selectedTrades.isEmpty()) {
-            addText("Aucun trade enregistré pour cette journée.", 12f, muted)
-        } else {
-            selectedTrades.forEach { trade ->
-                val p = trade.optDouble("pnl", 0.0)
-                addText(
-                    "${trade.optString("asset")} | " +
-                        "${trade.optString("direction")} | ${money(p)}",
-                    12f,
-                    if (p >= 0) green else red
-                )
-            }
-        }
+        line(tradeCard, "Résultat", status, statusColor)
+        line(tradeCard, "P&L", money(pnl), statusColor)
+        line(tradeCard, "Prix d'entrée", trade.optDouble("entry", 0.0).toString())
+        line(tradeCard, "Stop Loss", trade.optDouble("stop", 0.0).toString())
+        line(tradeCard, "Take Profit", trade.optDouble("target", 0.0).toString())
+        line(tradeCard, "Lot", trade.optDouble("lot", 0.0).toString())
+        line(tradeCard, "Session", trade.optString("session"))
 
-        makeButton(details, "AJOUTER UN TRADE À CETTE DATE") {
-            showTradeForm(selectedDate)
+        makeButton(tradeCard, "SUPPRIMER CE TRADE") {
+            AlertDialog.Builder(this)
+                .setTitle("Supprimer ce trade ?")
+                .setMessage("Cette action est définitive.")
+                .setNegativeButton("ANNULER", null)
+                .setPositiveButton("SUPPRIMER") { _, _ ->
+                    val newArray = JSONArray()
+
+                    for (i in 0 until trades.length()) {
+                        val item = trades.optJSONObject(i) ?: continue
+
+                        if (item.optLong("id") != trade.optLong("id")) {
+                            newArray.put(item)
+                        }
+                    }
+
+                    trades = newArray
+                    saveTrades()
+                    showDayDetails(date)
+                }
+                .show()
         }
     }
 
+    makeButton(summary, "+ AJOUTER UN TRADE À CETTE DATE") {
+        showTradeForm(date, true)
+    }
+
+    makeButton(summary, "RETOUR AU CALENDRIER") {
+        val cal = Calendar.getInstance()
+        try {
+            val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            format.isLenient = false
+            cal.time = format.parse(date) ?: Date()
+        } catch (_: Exception) {
+            cal.time = Date()
+        }
+
+        showCalendar(cal, date)
+    }
+}
     private fun showStats() {
         refresh("Statistiques")
 
