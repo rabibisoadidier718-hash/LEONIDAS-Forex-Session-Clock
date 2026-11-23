@@ -749,9 +749,15 @@ class MainActivity : Activity() {
             }
 
             trades.put(obj)
-            saveTrades()
-            message("Trade enregistré", "Ton trade a été sauvegardé.")
-            showJournal()
+saveTrades()
+
+message("Trade enregistré", "Ton trade a été sauvegardé.")
+
+if (returnToCalendar) {
+    showDayDetails(dateText)
+} else {
+    showJournal()
+}
         }
     }
 
